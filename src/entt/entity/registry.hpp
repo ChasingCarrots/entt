@@ -54,12 +54,19 @@ class registry {
         Component & construct(const Entity entity, Args &&... args) {
             auto &component = sparse_set<Entity, Component>::construct(entity, std::forward<Args>(args)...);
             ctor.publish(*reg, entity);
+            // the update signal should always be published when the
+            // component changes and that includes construction!
+            upd.publish(*reg, entity);
             return component;
         }
 
         void destroy(const Entity entity) override {
             dtor.publish(*reg, entity);
             sparse_set<Entity, Component>::destroy(entity);
+        }
+
+        void update(const Entity entity) {
+            upd.publish(*reg, entity);
         }
 
         typename signal_type::sink_type construction() ENTT_NOEXCEPT {
@@ -70,9 +77,14 @@ class registry {
             return dtor.sink();
         }
 
+        typename signal_type::sink_type updated() ENTT_NOEXCEPT {
+            return upd.sink();
+        }
+
     private:
         signal_type ctor;
         signal_type dtor;
+        signal_type upd;
         registry *reg;
     };
 
@@ -441,6 +453,8 @@ public:
             assert(entity < traits_type::entity_mask);
         }
 
+        ctor.publish(*this, entity);
+
         return entity;
     }
 
@@ -476,6 +490,8 @@ public:
                 cpool->destroy(entity);
             }
         };
+
+        dtor.publish(*this, entity);
 
         // just a way to protect users from listeners that attach components
         assert(orphan(entity));
@@ -694,6 +710,22 @@ public:
     }
 
     /**
+     * @brief Triggers the "updated" callback of the given component with the
+     * given entity.
+     *
+     * Call this function after you modified the component data.
+     * No data is modified!! If you are not using the "updated" callbacks, then
+     * this function is not necessary.
+     *
+     * @tparam Component Type of component for which to call the updated callback.
+     * @param entity A valid entity identifier.
+     */
+    template<typename Component>
+    void update(const entity_type entity) {
+        pool<Component>().update(entity);
+    }
+
+    /**
      * @brief Assigns or replaces the given component for an entity.
      *
      * Equivalent to the following snippet (pseudocode):
@@ -785,6 +817,33 @@ public:
     sink_type destruction() ENTT_NOEXCEPT {
         assure<Component>();
         return pool<Component>().destruction();
+    }
+
+    /**
+     * @brief Returns a sink object for the given component.
+     *
+     * A sink is an opaque object used to connect listeners to components.<br/>
+     * The sink returned by this function can be used to receive notifications
+     * whenever an instance of the given component was changed.
+     *
+     * The function type for a listener is equivalent to:
+     * @code{.cpp}
+     * void(registry<Entity> &, Entity);
+     * @endcode
+     *
+     * Listeners are invoked directly and only when the "updated" function
+     * was called on the component registry. It is the responsibility of
+     * the one changing data on a component to call this function!
+     *
+     * @sa sink
+     *
+     * @tparam Component Type of component of which to get the sink.
+     * @return A temporary sink object.
+     */
+    template<typename Component>
+    sink_type updated() ENTT_NOEXCEPT {
+        assure<Component>();
+        return pool<Component>().updated();
     }
 
     /**
@@ -1303,12 +1362,64 @@ public:
         return { (*this = {}), assure };
     }
 
+    /**
+     * @brief Returns a sink object for the given component.
+     *
+     * A sink is an opaque object used to connect listeners to entities.<br/>
+     * The sink returned by this function can be used to receive notifications
+     * whenever any entity is created.
+     *
+     * The function type for a listener is equivalent to:
+     * @code{.cpp}
+     * void(registry<Entity> &, Entity);
+     * @endcode
+     *
+     * The order of invocation of the listeners isn't guaranteed.<br/>
+     * Note also that the greater the number of listeners, the greater the
+     * performance hit when an entity is created.
+     *
+     * @sa sink
+     *
+     * @return A temporary sink object.
+     */
+    typename signal_type::sink_type construction() ENTT_NOEXCEPT {
+        return ctor.sink();
+    }
+
+    /**
+     * @brief Returns a sink object for the given component.
+     *
+     * A sink is an opaque object used to connect listeners to entities.<br/>
+     * The sink returned by this function can be used to receive notifications
+     * whenever any entity is destroyed.
+     *
+     * The function type for a listener is equivalent to:
+     * @code{.cpp}
+     * void(registry<Entity> &, Entity);
+     * @endcode
+     *
+     * Listeners are invoked **after** all the components have been removed
+     * from the entity, but **before** the entity itself is destroyed.
+     * The order of invocation of the listeners isn't guaranteed.<br/>
+     * Note also that the greater the number of listeners, the greater the
+     * performance hit when an entity is destroyed.
+     *
+     * @sa sink
+     *
+     * @return A temporary sink object.
+     */
+    typename signal_type::sink_type destruction() ENTT_NOEXCEPT {
+        return dtor.sink();
+    }
+
 private:
     std::vector<std::unique_ptr<sparse_set<Entity>>> handlers;
     std::vector<std::unique_ptr<sparse_set<Entity>>> pools;
     std::vector<entity_type> entities;
     size_type available{};
     entity_type next{};
+    signal_type ctor;
+    signal_type dtor;
 };
 
 
