@@ -1330,8 +1330,9 @@ public:
      *
      * @warning
      * The loader returned by this function requires that the registry be empty.
-     * In case it isn't, all the data will be automatically deleted before to
-     * return.
+     * If it is not, there will very likely be undefined behaviour!
+     * (we can't clear the registry the way EnTT originally did this, because
+     *  we would loose all callbacks that way!)
      *
      * @return A temporary object to use to load snasphosts.
      */
@@ -1359,7 +1360,7 @@ public:
             }
         };
 
-        return { (*this = {}), assure };
+        return { *this, assure };
     }
 
     /**
