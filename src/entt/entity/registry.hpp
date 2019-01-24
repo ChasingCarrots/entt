@@ -706,7 +706,9 @@ public:
      */
     template<typename Component, typename... Args>
     Component & replace(const entity_type entity, Args &&... args) {
-        return (get<Component>(entity) = Component{std::forward<Args>(args)...});
+		auto comp = (get<Component>(entity) = Component{ std::forward<Args>(args)... });
+		update<Component>(entity);
+		return comp;
     }
 
     /**
@@ -756,9 +758,15 @@ public:
         assure<Component>();
         auto &cpool = pool<Component>();
 
-        return cpool.has(entity)
-                ? cpool.get(entity) = Component{std::forward<Args>(args)...}
-                : cpool.construct(entity, std::forward<Args>(args)...);
+		if(cpool.has(entity)) {
+			auto &comp = cpool.get(entity);
+			comp = Component{ std::forward<Args>(args)... };
+			cpool.update(entity);
+			return comp;
+		}
+		else {
+			return cpool.construct(entity, std::forward<Args>(args)...);
+		}
     }
 
     /**
