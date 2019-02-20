@@ -587,7 +587,8 @@ public:
      */
     template<typename... Component>
     bool has(const entity_type entity) const ENTT_NOEXCEPT {
-        assert(valid(entity));
+        if (!valid(entity))
+            return false;
         return ((managed<Component>() && pool<Component>().has(entity)) && ...);
     }
 
@@ -654,10 +655,8 @@ public:
      */
     template<typename... Component>
     auto get_if([[maybe_unused]] const entity_type entity) const ENTT_NOEXCEPT {
-        assert(valid(entity));
-
         if constexpr(sizeof...(Component) == 1) {
-            return managed<Component...>() ? pool<Component...>().get_if(entity) : nullptr;
+            return valid(entity) && managed<Component...>() ? pool<Component...>().get_if(entity) : nullptr;
         } else {
             return std::tuple<const Component *...>{get_if<Component>(entity)...};
         }
