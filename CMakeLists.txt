@@ -16,7 +16,7 @@ endif()
 # Project configuration
 #
 
-project(EnTT VERSION 3.0.0)
+project(EnTT VERSION 3.1.0)
 
 include(GNUInstallDirs)
 
@@ -31,7 +31,7 @@ set(PROJECT_AUTHOR_EMAIL "michele.caini@gmail.com")
 
 message("*")
 message("* ${PROJECT_NAME} v${PROJECT_VERSION} (${CMAKE_BUILD_TYPE})")
-message("* Copyright (c) 2017-2018 ${PROJECT_AUTHOR} <${PROJECT_AUTHOR_EMAIL}>")
+message("* Copyright (c) 2017-2019 ${PROJECT_AUTHOR} <${PROJECT_AUTHOR_EMAIL}>")
 message("*")
 
 option(USE_LIBCPP "Use libc++ by adding -stdlib=libc++ flag if availbale." ON)
@@ -52,7 +52,7 @@ if(NOT MSVC AND USE_LIBCPP)
 
     check_cxx_source_compiles("
         #include<type_traits>
-        int main() { return std::is_same<int, int>::value ? 0 : 1; }
+        int main() { return std::is_same_v<int, int> ? 0 : 1; }
     " HAS_LIBCPP)
 
     if(NOT HAS_LIBCPP)
@@ -67,6 +67,8 @@ endif()
 #
 
 add_library(EnTT INTERFACE)
+
+configure_file(${EnTT_SOURCE_DIR}/cmake/in/version.h.in ${EnTT_SOURCE_DIR}/src/entt/config/version.h @ONLY)
 
 target_include_directories(
     EnTT INTERFACE
@@ -140,7 +142,6 @@ configure_package_config_file(
     ${CUSTOM_INSTALL_CONFIGDIR}/EnTTConfig.cmake
     INSTALL_DESTINATION ${CUSTOM_INSTALL_CONFIGDIR}
     PATH_VARS CMAKE_INSTALL_INCLUDEDIR
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
 
 write_basic_package_version_file(
@@ -186,6 +187,7 @@ if(BUILD_TESTING)
     endif()
 
     option(BUILD_BENCHMARK "Build benchmark." OFF)
+    option(BUILD_LIB "Build lib example." OFF)
     option(BUILD_MOD "Build mod example." OFF)
     option(BUILD_SNAPSHOT "Build snapshot example." OFF)
 
@@ -216,6 +218,7 @@ add_custom_target(
     SOURCES
         appveyor.yml
         AUTHORS
+        CONTRIBUTING.md
         LICENSE
         README.md
         TODO

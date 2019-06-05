@@ -6,8 +6,8 @@
 # Table of Contents
 
 * [Introduction](#introduction)
-* [Signals](#signals)
 * [Delegate](#delegate)
+* [Signals](#signals)
 * [Event dispatcher](#event-dispatcher)
 * [Event emitter](#event-emitter)
 <!--
@@ -32,11 +32,120 @@ In case that the flexibility and potential of an `std::function` are not
 required or where you are looking for something different, `EnTT` offers a full
 set of classes to solve completely different problems.
 
+# Delegate
+
+A delegate can be used as a general purpose invoker with no memory overhead for
+free functions and members provided along with an instance on which to invoke
+them.<br/>
+It does not claim to be a drop-in replacement for an `std::function`, so do not
+expect to use it whenever an `std::function` fits well. That said, it's most
+likely even a better fit than an `std::function` in a lot of cases, so expect to
+use it quite a lot anyway.
+
+The interface is trivial. It offers a default constructor to create empty
+delegates:
+
+```cpp
+entt::delegate<int(int)> delegate{};
+```
+
+All what is needed to create an instance is to specify the type of the function
+the delegate will _contain_, that is the signature of the free function or the
+member one wants to assign to it.
+
+Attempting to use an empty delegate by invoking its function call operator
+results in undefined behavior or most likely a crash. Before to use a delegate,
+it must be initialized.<br/>
+There exists a bunch of overloads of the `connect` member function to do that.
+As an example of use:
+
+```cpp
+int f(int i) { return i; }
+
+struct my_struct {
+    int f(const int &i) { return i }
+};
+
+// bind a free function to the delegate
+delegate.connect<&f>();
+
+// bind a member function to the delegate
+my_struct instance;
+delegate.connect<&my_struct::f>(&instance);
+```
+
+The delegate class accepts also data members, if needed. In this case, the
+function type of the delegate is such that the parameter list is empty and the
+value of the data member is at least convertible to the return type.
+
+Functions having type equivalent to `void(T *, args...)` are accepted as well.
+In this case, `T *` is considered a payload and the function will receive it
+back every time it's invoked. In other terms, this works just fine with the
+above definition:
+
+```cpp
+void g(const char *c, int i) { /* ... */ }
+const char c = 'c';
+
+delegate.connect<&g>(&c);
+delegate(42);
+```
+
+The function `g` will be invoked with a pointer to `c` and `42`. However, the
+function type of the delegate is still `void(int)`. This is also the signature
+of its function call operator.
+
+Another interesting aspect of the delegate class is that it accepts also
+functions with a list of parameters that is shorter than that of the function
+type used to specialize the delegate itself.<br/>
+This is a nice-to-have feature in a lot of cases. The following code is
+therefore perfectly valid:
+
+```cpp
+void g() { /* ... */ }
+delegate.connect<&g>();
+delegate(42);
+```
+
+Where the function type of the delegate is `void(int)` as above. It goes without
+saying that the extra arguments are silently discarded internally.
+
+To create and initialize a delegate at once, there are a few specialized
+constructors. Because of the rules of the language, the listener is provided by
+means of the `entt::connect_arg` variable template:
+
+```cpp
+entt::delegate<int(int)> func{entt::connect_arg<&f>};
+```
+
+Aside `connect`, a `disconnect` counterpart isn't provided. Instead, there
+exists a `reset` member function to use to clear a delegate.<br/>
+To know if a delegate is empty, it can be used explicitly in every conditional
+statement:
+
+```cpp
+if(delegate) {
+    // ...
+}
+```
+
+Finally, to invoke a delegate, the function call operator is the way to go as
+already shown in the examples above:
+
+```cpp
+auto ret = delegate(42);
+```
+
+In all cases, the listeners don't have to strictly follow the signature of the
+delegate. As long as a listener can be invoked with the given arguments to yield
+a result that is convertible to the given result type, everything works just
+fine.
+
 # Signals
 
 Signal handlers work with naked pointers, function pointers and pointers to
-member functions. Listeners can be any kind of objects and users are in charge
-of connecting and disconnecting them from a signal to avoid crashes due to
+member. Listeners can be any kind of objects and users are in charge of
+connecting and disconnecting them from a signal to avoid crashes due to
 different lifetimes. On the other side, performance shouldn't be affected that
 much by the presence of such a signal handler.<br/>
 A signal handler can be used as a private data member without exposing any
@@ -89,17 +198,17 @@ signal.sink().connect<&listener::bar>(&instance);
 // disconnects a free function
 signal.sink().disconnect<&foo>();
 
-// disconnect a specific member function of an instance ...
+// disconnect a member function of an instance
 signal.sink().disconnect<&listener::bar>(&instance);
 
-// ... or an instance as a whole
+// disconnect all the member functions of an instance, if any
 signal.sink().disconnect(&instance);
 
 // discards all the listeners at once
 signal.sink().disconnect();
 ```
 
-As shown above, listeners do not have to strictly follow the signature of the
+As shown above, the listeners don't have to strictly follow the signature of the
 signal. As long as a listener can be invoked with the given arguments to yield a
 result that is convertible to the given result type, everything works just fine.
 
@@ -140,78 +249,10 @@ assert(collector.vec[0] == 0);
 assert(collector.vec[1] == 1);
 ```
 
-As shown above, a collector must expose a function operator that accepts as an
-argument a type to which the return type of the listeners can be converted.
-Moreover, it has to return a boolean value that is false to stop collecting
-data, true otherwise. This way one can avoid calling all the listeners in case
-it isn't necessary.
-
-# Delegate
-
-A delegate can be used as general purpose invoker with no memory overhead for
-free functions and member functions provided along with an instance on which
-to invoke them.<br/>
-It does not claim to be a drop-in replacement for an `std::function`, so do not
-expect to use it whenever an `std::function` fits well. However, it can be used
-to send opaque delegates around to be used to invoke functions as needed.
-
-The interface is trivial. It offers a default constructor to create empty
-delegates:
-
-```cpp
-entt::delegate<int(int)> delegate{};
-```
-
-All what is needed to create an instance is to specify the type of the function
-the delegate will _contain_, that is the signature of the free function or the
-member function one wants to assign to it.
-
-Attempting to use an empty delegate by invoking its function call operator
-results in undefined behavior or most likely a crash. Before to use a delegate,
-it must be initialized.<br/>
-There exist two functions to do that, both named `connect`:
-
-```cpp
-int f(int i) { return i; }
-
-struct my_struct {
-    int f(const int &i) { return i }
-};
-
-// bind a free function to the delegate
-delegate.connect<&f>();
-
-// bind a member function to the delegate
-my_struct instance;
-delegate.connect<&my_struct::f>(&instance);
-```
-
-It hasn't a `disconnect` counterpart. Instead, there exists a `reset` member
-function to clear it.<br/>
-To know if a delegate is empty, it can be used explicitly in every conditional
-statement:
-
-```cpp
-if(delegate) {
-    // ...
-}
-```
-
-Finally, to invoke a delegate, the function call operator is the way to go as
-usual:
-
-```cpp
-auto ret = delegate(42);
-```
-
-As shown above, listeners do not have to strictly follow the signature of the
-delegate. As long as a listener can be invoked with the given arguments to yield
-a result that is convertible to the given result type, everything works just
-fine.
-
-Probably too much small and pretty poor of functionalities, but the delegate
-class can help in a lot of cases and it has shown that it is worth keeping it
-within the library.
+A collector must expose a function operator that accepts as an argument a type
+to which the return type of the listeners can be converted. Moreover, it has to
+return a boolean value that is false to stop collecting data, true otherwise.
+This way one can avoid calling all the listeners in case it isn't necessary.
 
 # Event dispatcher
 
@@ -230,11 +271,8 @@ In order to register an instance of a class to a dispatcher, its type must
 expose one or more member functions the arguments of which are such that
 `const E &` can be converted to them for each type of event `E`, no matter what
 the return value is.<br/>
-To ease the development, member functions that are named `receive` are
-automatically detected and have not to be explicitly specified when registered.
-In all the other cases, the name of the member function aimed to receive the
-event must be provided to the `connect` member function of the sink bound to the
-specific event:
+The name of the member function aimed to receive the event must be provided to
+the `connect` member function of the sink in charge for the specific event:
 
 ```cpp
 struct an_event { int value; };
@@ -249,16 +287,16 @@ struct listener
 // ...
 
 listener listener;
-dispatcher.sink<an_event>().connect(&listener);
+dispatcher.sink<an_event>().connect<&listener::receive>(&listener);
 dispatcher.sink<another_event>().connect<&listener::method>(&listener);
 ```
 
 The `disconnect` member function follows the same pattern and can be used to
-selectively remove listeners:
+remove one listener at a time or all of them at once:
 
 ```cpp
-dispatcher.sink<an_event>().disconnect(&listener);
-dispatcher.sink<another_event>().disconnect<&listener::method>(&listener);
+dispatcher.sink<an_event>().disconnect<&listener::receive>(&listener);
+dispatcher.sink<another_event>().disconnect(&listener);
 ```
 
 The `trigger` member function serves the purpose of sending an immediate event

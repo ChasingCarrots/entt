@@ -9,9 +9,31 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/rvhaabjmghg715ck?svg=true)](https://ci.appveyor.com/project/skypjack/entt)
 [![Coverage Status](https://coveralls.io/repos/github/skypjack/entt/badge.svg?branch=master)](https://coveralls.io/github/skypjack/entt?branch=master)
 [![Gitter chat](https://badges.gitter.im/skypjack/entt.png)](https://gitter.im/skypjack/entt)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=W2HF9FESD5LJY&lc=IT&item_name=Michele%20Caini&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/skypjack)
 
-[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/bePatron?u=11330786)
+`EnTT` is a header-only, tiny and easy to use library for game programming and
+much more written in **modern C++**, mainly known for its innovative
+**entity-component-system (ECS)** model.<br/>
+[Among others](https://github.com/skypjack/entt/wiki/EnTT-in-Action), it's used
+in [**Minecraft**](https://minecraft.net/en-us/attribution/) by Mojang, the
+[**ArcGIS Runtime SDKs**](https://developers.arcgis.com/arcgis-runtime/) by Esri
+and [**The Forge**](https://github.com/ConfettiFX/The-Forge) by Confetti. Read
+on to find out what it can offer you.
+
+---
+
+Do you want to **keep up with changes** or do you have a **question** that
+doesn't require you to open an issue?<br/>
+Join the [gitter channel](https://gitter.im/skypjack/entt) and meet other users
+like you. The more we are, the better for everyone.
+
+If you use `EnTT` and you want to say thanks or support the project, please
+**consider becoming a patron**:
+
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/bePatron?c=1772573)
+
+[Many thanks](https://skypjack.github.io/patreon/) to those who supported me and
+still support me today.
 
 # Table of Contents
 
@@ -38,9 +60,6 @@
 
 # Introduction
 
-`EnTT` is a header-only, tiny and easy to use entity-component system (and much
-more) written in modern C++ and even
-[used by Mojang in Minecraft](https://minecraft.net/en-us/attribution/).<br/>
 The entity-component-system (also known as _ECS_) is an architectural pattern
 used mostly in game development. For further details:
 
@@ -48,26 +67,26 @@ used mostly in game development. For further details:
 * [Evolve Your Hierarchy](http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/)
 * [ECS on Wikipedia](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
 
-A long time ago, the sole entity-component system was part of the project. After
-a while the codebase has grown and more and more classes have become part of the
-repository.<br/>
+This project started off as a pure entity-component system. Over time the
+codebase has grown as more and more classes and functionalities were added.<br/>
 Here is a brief, yet incomplete list of what it offers today:
 
 * Statically generated integer **identifiers for types** (assigned either at
-  **compile-time** or at **runtime**).
-* A **constexpr utility** for **human readable resource identifiers**.
-* A minimal **configuration system** built on top of the **monostate pattern**.
-* **An incredibly fast entity-component system** based on sparse sets, with its
-  own views and a _pay for what you use_ policy to adjust performance and memory
-  usage according to users' requirements.
-* A lot of **facilities built on top of the entity-component system** to help
-  developers and avoid reinventing the wheel (ie **dependencies**, **snapshot**,
-  **actor class** for those who aren't confident with the architecture and so
-  on).
+  compile-time or at runtime).
+* A `constexpr` utility for **human readable resource identifiers**.
+* A minimal **configuration system** built using the monostate pattern.
+* An incredibly fast **entity-component system** based on sparse sets, with its
+  own _pay for what you use_ policy to adjust performance and memory usage
+  according to the users' requirements.
+* Views and groups to iterate entities and components and allow different access
+  patterns, from **perfect SoA** to fully random.
+* A lot of **facilities** built on top of the entity-component system to support
+  the users and avoid reinventing the wheel (dependencies, snapshot, actor class
+  for those who aren't confident with the architecture and so on).
 * The smallest and most basic implementation of a **service locator** ever seen.
 * A built-in, non-intrusive and macro-free **runtime reflection system**.
 * A **cooperative scheduler** for processes of any type.
-* All what is needed for **resource management** (cache, loaders, handles).
+* All that is needed for **resource management** (cache, loaders, handles).
 * **Delegates**, **signal handlers** (with built-in support for collectors) and
   a tiny **event dispatcher** for immediate and delayed events to integrate in
   loops.
@@ -75,13 +94,13 @@ Here is a brief, yet incomplete list of what it offers today:
 * And **much more**! Check out the
   [**wiki**](https://github.com/skypjack/entt/wiki).
 
-Consider it a work in progress. The whole API is also fully documented in-code
-for those who are brave enough to read it.
+Consider this list a work in progress as well as the project. The whole API is
+fully documented in-code for those who are brave enough to read it.
 
-Currently, `EnTT` is tested on Linux, Microsoft Windows and OS X. It has proven
+Currently, `EnTT` is tested on Linux, Microsoft Windows and OSX. It has proven
 to work also on both Android and iOS.<br/>
-Most likely it will not be problematic on other systems as well, but has not
-been sufficiently tested so far.
+Most likely it won't be problematic on other systems as well, but it hasn't been
+sufficiently tested so far.
 
 ## Code Example
 
@@ -115,7 +134,7 @@ void update(entt::registry &registry) {
 }
 
 void update(std::uint64_t dt, entt::registry &registry) {
-    registry.view<position, velocity>().each([dt](const auto, auto &pos, auto &vel) {
+    registry.view<position, velocity>().each([dt](auto &pos, auto &vel) {
         // gets all the components of the view at once ...
 
         pos.x += vel.dx * dt;
@@ -144,11 +163,10 @@ int main() {
 
 ## Motivation
 
-I started working on `EnTT` because of the wrong reason: my goal was to design
-an entity-component system that beated another well known open source solution
-in terms of performance and used (possibly) less memory in the average
-case.<br/>
-In the end, I did it, but it wasn't much satisfying. Actually it wasn't
+I started developing `EnTT` for the _wrong_ reason: my goal was to design an
+entity-component system to beat another well known open source solution both in
+terms of performance and possibly memory usage.<br/>
+In the end, I did it, but it wasn't very satisfying. Actually it wasn't
 satisfying at all. The fastest and nothing more, fairly little indeed. When I
 realized it, I tried hard to keep intact the great performance of `EnTT` and to
 add all the features I wanted to see in *my own library* at the same time.
@@ -159,10 +177,10 @@ amazing set of features. And even more, of course.
 
 ## Performance
 
-As it stands right now, `EnTT` is just fast enough for my requirements if
+As it stands right now, `EnTT` is just fast enough for my requirements when
 compared to my first choice (it was already amazingly fast actually).<br/>
 Below is a comparison between the two (both of them compiled with GCC 7.3.0 on a
-Dell XPS 13 out of the mid 2014):
+Dell XPS 13 from mid 2014):
 
 | Benchmark | EntityX (compile-time) | EnTT |
 |-----------|-------------|-------------|
@@ -184,27 +202,27 @@ Dell XPS 13 out of the mid 2014):
 Note: The default version of `EntityX` (`master` branch) wasn't added to the
 comparison because it's already much slower than its compile-time counterpart.
 
-Pretty interesting, aren't them? In fact, these benchmarks are the same used by
-`EntityX` to show _how fast it is_. To be honest, they aren't so good and these
-results shouldn't be taken much seriously (they are completely unrealistic
-indeed).<br/>
+Pretty interesting results, aren't them? In fact, these benchmarks are the ones
+used by `EntityX` to show _how fast it is_. To be honest, they aren't so good
+and these results shouldn't be taken too seriously (indeed they are completely
+unrealistic).<br/>
 The proposed entity-component system is incredibly fast to iterate entities,
 this is a fact. The compiler can make a lot of optimizations because of how
 `EnTT` works, even more when components aren't used at all. This is exactly the
-case for these benchmarks. On the other hand and if we consider real world
-cases, `EnTT` is in the middle between a bit and much faster than the other
-solutions around when users also access the components and not just the
-entities, although it is not as fast as reported by these benchmarks.<br/>
+case for these benchmarks. On the other hand, if we consider real world cases,
+`EnTT` is somewhere between a bit and much faster than the other solutions
+around when users also access the components and not just the entities, although
+it isn't as fast as reported by these benchmarks.<br/>
 This is why they are completely wrong and cannot be used to evaluate any of the
-entity-component systems.
+entity-component-system libraries out there.
 
-If you decide to use `EnTT`, choose it because of its API, features and
-performance, not because there is a benchmark somewhere that makes it seem the
-fastest.
+The choice to use `EnTT` should be based on its carefully designed API, its
+set of features and the general performance, not because some single benchmark
+shows it to be the fastest tool available.
 
-Probably I'll try to get out of `EnTT` more features and even better performance
-in the future, mainly for fun.<br/>
-If you want to contribute and/or have any suggestion, feel free to make a PR or
+In the future I'll likely try to get even better performance while still adding
+new features, mainly for fun.<br/>
+If you want to contribute and/or have suggestions, feel free to make a PR or
 open an issue to discuss your idea.
 
 # Build Instructions
@@ -244,7 +262,7 @@ the include paths.
 
 ## Documentation
 
-The documentation is based on [doxygen](http://www.stack.nl/~dimitri/doxygen/).
+The documentation is based on [doxygen](http://www.doxygen.nl/).
 To build it:
 
     $ cd build
@@ -272,12 +290,12 @@ to the project where users can find all related documentation pages.
 
 To compile and run the tests, `EnTT` requires *googletest*.<br/>
 `cmake` will download and compile the library before compiling anything else.
-In order to build without tests set CMake option `BUILD_TESTING=OFF`.
+In order to build the tests, set the CMake option `BUILD_TESTING` to `ON`.
 
 To build the most basic set of tests:
 
 * `$ cd build`
-* `$ cmake ..`
+* `$ cmake -DBUILD_TESTING=ON ..`
 * `$ make`
 * `$ make test`
 
@@ -287,14 +305,16 @@ Note that benchmarks are not part of this set.
 
 `EnTT` is available for some of the most known packaging tools. In particular:
 
-* [`vcpkg`](https://github.com/Microsoft/vcpkg/tree/master/ports/entt),
-  Microsoft VC++ Packaging Tool.
+* [`Conan`](https://bintray.com/skypjack/conan/entt%3Askypjack/_latestVersion),
+  the C/C++ Package Manager for Developers.
 * [`Homebrew`](https://github.com/skypjack/homebrew-entt), the missing package
   manager for macOS.<br/>
   Available as a homebrew formula. Just type the following to install it:
   ```
   brew install skypjack/entt/entt
   ```
+* [`vcpkg`](https://github.com/Microsoft/vcpkg/tree/master/ports/entt),
+  Microsoft VC++ Packaging Tool.
 
 Consider this list a work in progress and help me to make it longer.
 
@@ -309,7 +329,7 @@ ago. Fortunately, there are also people who took the time to implement open
 source projects based on `EnTT` and did not hold back when it came to
 documenting them.
 
-[Here](https://github.com/skypjack/entt/wiki/EnTT-in-Action) you can find and
+[Here](https://github.com/skypjack/entt/wiki/EnTT-in-Action) you can find an
 incomplete list of games, applications and articles that can be used as a
 reference.
 
@@ -332,7 +352,7 @@ I can't promise that each and every contribution will be accepted, but I can
 assure that I'll do my best to take them all seriously.
 
 If you decide to participate, please see the guidelines for
-[contributing](docs/CONTRIBUTING.md) before to create issues or pull
+[contributing](CONTRIBUTING.md) before to create issues or pull
 requests.<br/>
 Take also a look at the
 [contributors list](https://github.com/skypjack/entt/blob/master/AUTHORS) to
@@ -343,8 +363,8 @@ know who has participated so far.
 
 # License
 
-Code and documentation Copyright (c) 2017-2018 Michele Caini.<br/>
-Logo Copyright (c) 2018 Richard Caseres.
+Code and documentation Copyright (c) 2017-2019 Michele Caini.<br/>
+Logo Copyright (c) 2018-2019 Richard Caseres.
 
 Code released under
 [the MIT license](https://github.com/skypjack/entt/blob/master/LICENSE).
@@ -377,7 +397,7 @@ If you want to support this project, you can offer me an espresso. I'm from
 Italy, we're used to turning the best coffee ever in code. If you find that
 it's not enough, feel free to support me the way you prefer.<br/>
 Take a look at the donation button at the top of the page for more details or
-just click [here](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=W2HF9FESD5LJY&lc=IT&item_name=Michele%20Caini&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted).
+just click [here](https://www.paypal.me/skypjack).
 
 ## Hire me
 
