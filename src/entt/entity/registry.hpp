@@ -643,6 +643,8 @@ public:
      */
     void destroy(const entity_type entity) {
         ENTT_ASSERT(valid(entity));
+        if(!valid(entity))
+            return;
 
         for(auto pos = pools.size(); pos; --pos) {
             if(auto &pdata = pools[pos-1]; pdata.pool && pdata.pool->has(entity)) {
