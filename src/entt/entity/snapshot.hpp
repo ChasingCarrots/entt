@@ -231,13 +231,20 @@ class basic_snapshot_loader {
 
             if constexpr(std::is_empty_v<Type>) {
                 archive(entt);
-                force(*reg, entt, destroyed);
-                reg->template assign<Type>(args..., entt);
+                // the source of the problem why we check for validity
+                // here lies in the saving (which we hopefully fixed),
+                // but there are savegames out there where this check helps!
+                if(reg->valid(entt)) {
+                    force(*reg, entt, destroyed);
+                    reg->template assign<Type>(args..., entt);
+                }
             } else {
                 Type instance{};
                 archive(entt, instance);
-                force(*reg, entt, destroyed);
-                reg->template assign<Type>(args..., entt, std::as_const(instance));
+                if(reg->valid(entt)) {
+                    force(*reg, entt, destroyed);
+                    reg->template assign<Type>(args..., entt, std::as_const(instance));
+                }
             }
         }
     }
@@ -264,6 +271,18 @@ public:
         static constexpr auto destroyed = false;
         assure(archive, destroyed);
         return *this;
+    }
+
+    /// This function is specifically to fix a problem with savegames
+    /// which are already destroyed because of a size mismatch in the binary
+    /// data of the entities array.
+    template<typename Archive>
+    Entity loadSingleEntity(Archive &archive) const {
+        static constexpr auto destroyed = false;
+        Entity entt{};
+        archive(entt);
+        force(*reg, entt, destroyed);
+        return entt;
     }
 
     /**
