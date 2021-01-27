@@ -836,7 +836,7 @@ public:
     auto try_get([[maybe_unused]] const entity_type entity) const ENTT_NOEXCEPT {
         if constexpr(sizeof...(Component) == 1) {
             const auto cpools = std::make_tuple(pool<Component>()...);
-            return ((std::get<const pool_type<Component> *>(cpools) ? std::get<const pool_type<Component> *>(cpools)->try_get(entity) : nullptr), ...);
+            return ((valid(entity) && std::get<const pool_type<Component> *>(cpools) ? std::get<const pool_type<Component> *>(cpools)->try_get(entity) : nullptr), ...);
         } else {
             return std::tuple<std::add_const_t<Component> *...>{try_get<Component>(entity)...};
         }
